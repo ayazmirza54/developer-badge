@@ -15,14 +15,22 @@ const skills = ['SQL', 'PYTHON', 'AWS', 'LINUX', 'ANSIBLE', 'GIT', 'DOCKER', 'CI
 function App() {
   return (
     <main>
-      <div className="topline"><span>PERSONAL DEVELOPER BADGE</span><span>v2.1 / REACT BITS</span></div>
+      <div className="topline"><span>PERSONAL DEVELOPER BADGE</span><span>v2.2 / REACT BITS</span></div>
       <section className="intro">
         <p className="eyebrow">IDENTITY / ENGINEERING / CRAFT</p>
         <h1>A physical badge, now with <em>physics.</em></h1>
-        <p className="sub">Drag the card and let it swing. The lanyard is simulated with React Three Fiber, Rapier and MeshLine.</p>
+        <p className="sub">Drag the card and let it swing. The badge now carries Ayaz's own profile details on both sides.</p>
       </section>
       <section className="lanyard-stage" aria-label="Interactive developer lanyard badge">
-        <Lanyard position={[0, 0, 24]} gravity={[0, -40, 0]} fov={20} lanyardWidth={1} />
+        <Lanyard
+          position={[0, 0, 24]}
+          gravity={[0, -40, 0]}
+          fov={20}
+          frontImage="/badge-front.svg"
+          backImage="/badge-back.svg"
+          imageFit="cover"
+          lanyardWidth={1}
+        />
       </section>
       <section className="profile-strip" aria-label="Profile highlights">
         {stats.map(([value, label]) => (
