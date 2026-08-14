@@ -5,11 +5,14 @@ import { useGLTF, useTexture, Environment, Lightformer } from '@react-three/drei
 import { BallCollider, CuboidCollider, Physics, RigidBody, useRopeJoint, useSphericalJoint } from '@react-three/rapier';
 import { MeshLineGeometry, MeshLineMaterial } from 'meshline';
 import * as THREE from 'three';
-import cardGLB from './assets/lanyard/card.glb';
-import lanyard from './assets/lanyard/lanyard.png';
 import './Lanyard.css';
 
 extend({ MeshLineGeometry, MeshLineMaterial });
+
+// React Bits' original binary assets are hosted here because the connected
+// GitHub/Vercel workflow cannot safely transfer binary blobs between repos.
+const CARD_GLB = 'https://raw.githubusercontent.com/MAliffadlan/mini_labs/main/public/assets/lanyard/card.glb';
+const LANYARD_PNG = 'https://raw.githubusercontent.com/MAliffadlan/mini_labs/main/public/assets/lanyard/lanyard.png';
 
 const BLANK_PIXEL =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
@@ -66,16 +69,7 @@ export default function Lanyard({
   );
 }
 
-function Band({
-  maxSpeed = 50,
-  minSpeed = 0,
-  isMobile = false,
-  frontImage = null,
-  backImage = null,
-  imageFit = 'cover',
-  lanyardImage = null,
-  lanyardWidth = 1
-}) {
+function Band({ maxSpeed = 50, minSpeed = 0, isMobile = false, frontImage = null, backImage = null, imageFit = 'cover', lanyardImage = null, lanyardWidth = 1 }) {
   const band = useRef();
   const fixed = useRef();
   const j1 = useRef();
@@ -88,15 +82,14 @@ function Band({
   const dir = new THREE.Vector3();
   const segmentProps = { type: 'dynamic', canSleep: true, colliders: false, angularDamping: 4, linearDamping: 4 };
 
-  const { nodes, materials } = useGLTF(cardGLB);
-  const texture = useTexture(lanyardImage || lanyard);
+  const { nodes, materials } = useGLTF(CARD_GLB);
+  const texture = useTexture(lanyardImage || LANYARD_PNG);
   const frontTex = useTexture(frontImage || BLANK_PIXEL);
   const backTex = useTexture(backImage || BLANK_PIXEL);
 
   const cardMap = useMemo(() => {
     const baseMap = materials.base.map;
     if (!frontImage && !backImage) return baseMap;
-
     const baseImg = baseMap.image;
     const W = baseImg.width;
     const H = baseImg.height;
@@ -112,8 +105,7 @@ function Band({
       const ry = rect.y * H;
       const rw = rect.w * W;
       const rh = rect.h * H;
-      const pick = imageFit === 'contain' ? Math.min : Math.max;
-      const scale = pick(rw / img.width, rh / img.height);
+      const scale = (imageFit === 'contain' ? Math.min : Math.max)(rw / img.width, rh / img.height);
       const dw = img.width * scale;
       const dh = img.height * scale;
       const dx = rx + (rw - dw) / 2;
@@ -128,7 +120,6 @@ function Band({
 
     if (frontImage && frontTex.image) drawFitted(frontTex.image, FRONT_UV_RECT);
     if (backImage && backTex.image) drawFitted(backTex.image, BACK_UV_RECT);
-
     const composite = new THREE.CanvasTexture(canvas);
     composite.colorSpace = THREE.SRGBColorSpace;
     composite.flipY = baseMap.flipY;
@@ -137,12 +128,7 @@ function Band({
     return composite;
   }, [frontImage, backImage, imageFit, frontTex, backTex, materials.base.map]);
 
-  const [curve] = useState(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(),
-    new THREE.Vector3(),
-    new THREE.Vector3(),
-    new THREE.Vector3()
-  ]));
+  const [curve] = useState(() => new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]));
   const [dragged, drag] = useState(false);
   const [hovered, hover] = useState(false);
 
@@ -166,7 +152,6 @@ function Band({
       [card, j1, j2, j3, fixed].forEach(ref => ref.current?.wakeUp());
       card.current?.setNextKinematicTranslation({ x: vec.x - dragged.x, y: vec.y - dragged.y, z: vec.z - dragged.z });
     }
-
     if (fixed.current) {
       [j1, j2].forEach(ref => {
         if (!ref.current.lerped) ref.current.lerped = new THREE.Vector3().copy(ref.current.translation());
@@ -191,31 +176,13 @@ function Band({
     <>
       <group position={[0, 4, 0]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" />
-        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
-        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
-        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}>
-          <BallCollider args={[0.1]} />
-        </RigidBody>
+        <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
+        <RigidBody position={[1, 0, 0]} ref={j2} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
+        <RigidBody position={[1.5, 0, 0]} ref={j3} {...segmentProps}><BallCollider args={[0.1]} /></RigidBody>
         <RigidBody position={[2, 0, 0]} ref={card} {...segmentProps} type={dragged ? 'kinematicPosition' : 'dynamic'}>
           <CuboidCollider args={[0.8, 1.125, 0.01]} />
-          <group
-            scale={2.25}
-            position={[0, -1.2, -0.05]}
-            onPointerOver={() => hover(true)}
-            onPointerOut={() => hover(false)}
-            onPointerUp={e => { e.target.releasePointerCapture(e.pointerId); drag(false); }}
-            onPointerDown={e => {
-              e.target.setPointerCapture(e.pointerId);
-              drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation())));
-            }}
-          >
-            <mesh geometry={nodes.card.geometry}>
-              <meshPhysicalMaterial map={cardMap} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} />
-            </mesh>
+          <group scale={2.25} position={[0, -1.2, -0.05]} onPointerOver={() => hover(true)} onPointerOut={() => hover(false)} onPointerUp={e => { e.target.releasePointerCapture(e.pointerId); drag(false); }} onPointerDown={e => { e.target.setPointerCapture(e.pointerId); drag(new THREE.Vector3().copy(e.point).sub(vec.copy(card.current.translation()))); }}>
+            <mesh geometry={nodes.card.geometry}><meshPhysicalMaterial map={cardMap} map-anisotropy={16} clearcoat={isMobile ? 0 : 1} clearcoatRoughness={0.15} roughness={0.9} metalness={0.8} /></mesh>
             <mesh geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} />
             <mesh geometry={nodes.clamp.geometry} material={materials.metal} />
           </group>
